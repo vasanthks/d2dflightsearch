@@ -1,0 +1,8 @@
+*.class
+*.iml
+*.ipr
+.project
+.classpath
+.dependencies
+/bin
+/out
