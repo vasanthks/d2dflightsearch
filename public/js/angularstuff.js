@@ -8,7 +8,24 @@ app.controller('MainCtrl', function ($scope) {
   $scope.searchresults = null;
 
   $scope.searchnow = function() {
+    $scope.searchresults =
+    [
+      {
+        "airline" : "American",
+        "departure" : "ORD",
+        "arrival" : "JFK",
+        "price" : "200",
+        "duration" : "1h20m"
+      },
+      {
+        "airline" : "American",
+        "departure" : "ORD",
+        "arrival" : "JFK",
+        "price" : "200",
+        "duration" : "1h20m"
+      }
 
+    ]
   };
 
 });
