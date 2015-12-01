@@ -5,7 +5,45 @@ var request = require('request');
 app.use(express.static('public'));
 
 app.get('/hello', function (req, res) {
-  res.send('Hello World!');
+    res.send('Hello World!');
+});
+
+app.get('/flightsearch', function (req, res) {
+    var origin = req.query.origin
+    var destination = req.query.destination
+
+    request({
+        url: 'https://maps.googleapis.com/maps/api/directions/json?'+'key=AIzaSyCCvw_1ASiIIZ0jZDjvG9rnh1FecDojlwI'+
+            '&origin=\"' + origin+ '\"'+
+            '&destination=\"' + destination + '\"' +
+            '&mode=driving',
+        method: 'GET'
+
+
+    },function(error, response, body){
+        if(error) {
+            res.send({price: 150})
+        } else {
+            try {
+                var directions = JSON.parse(body)
+                var distance = directions.routes[0].legs[0].distance.text
+                var duration = directions.routes[0].legs[0].duration.text
+
+
+//                res.send(body.routes)
+                //res.send(body.aggregations['top-origin']['buckets'][0]['min_price_hits']['hits']['hits'][0]['_source'])
+            }
+            catch(err) {
+                console.log(err)
+                res.send({price: 'body failure'})
+            }
+        }
+    });
+
+
+
+
+
 });
 
 app.get('/pricing/:code', function (req, res) {
