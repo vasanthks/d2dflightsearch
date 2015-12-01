@@ -12,7 +12,7 @@
     <link rel="shortcut icon" href="favicon.ico"/>
 </head>
 <body ng-app="example" ng-controller="MainCtrl">
-  <div class="outer-div-control container-fluid" style="background-image:url('./images/portland.jpg');">
+  <div class="outer-div-control container-fluid" style="background-image:url('./images/Chicago.jpg');">
       <div class="inner-div-control row text-center">
           <h1 style="color:#fff;">
               Find the fastest route to your destination
@@ -23,40 +23,33 @@
           <div align="center">
             <div class="container">
                 <div class="row">
-                    <div class="col-md-12">
-                        <h1>Basic Usage</h1>
-
-                        <form class="form">
-                            <input class="form-control" g-places-autocomplete ng-model="place"/>
-                        </form>
-
-                        <h5>Result:</h5>
-                        <pre>{{place | json}}</pre>
+                  <form class="form">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-4">
+                      <input class="form-control" g-places-autocomplete ng-model="origin" placeholder="Departure address"/>
                     </div>
+                    <div class="col-md-4">
+                      <input class="form-control" g-places-autocomplete ng-model="destination" placeholder="Arrival address"/>
+                    </div>
+                    <div class="col-md-2"></div>
+                  </form>
+                </div>
+                <br/>
+                <div class="row">
+                  <form class="form">
+                      <div class="formField">
+                          <i class="fa fa-calendar"></i>
+                          <input type="date" id="leaveDate" class="form-control" placeholder="Departure Date" ng-model="departdate" required autofocus>
+                      </div>
+                  </form>
+                </div>
+                <br/>
+                <div class="row">
+                  <button class="btn btn-default" ng-click="searchnow()">
+                    Search
+                  </button>
                 </div>
             </div>
-              <form>
-                  <fieldset class="fieldset-control">
-                      <label for="leaveDate" class="sr-only"></label>
-
-                      <div class="formField">
-                          <i class="fa fa-calendar"></i>
-                          <input type="date" id="leaveDate" class="form-control" placeholder="Leave" required autofocus>
-                      </div>
-                      <label for="returnDate" class="sr-only"></label>
-
-                      <div class="formField">
-                          <i class="fa fa-calendar"></i>
-                          <input type="date" id="returnDate" class="form-control" placeholder="Return" required>
-                      </div>
-
-                      <div class="formField">
-                          <a href="#" class="btn btn-orbitz btn-lg">
-                              <i class="fa fa-plane"></i> &nbsp;Search
-                          </a>
-                      </div>
-                  </fieldset>
-              </form>
           </div>
       </div>
   </div>
