@@ -55,6 +55,7 @@
       </div>
     </div>
   </div>
+
   <div id="bottom" class="container-fluid">
     <div class="row outerbox">
       <div class="col-md-12">
@@ -69,17 +70,17 @@
           <br/>
           <div class="col-md-2">{{result.airline}}</div>
           <div class="col-md-6">
-            10m
+            {{result.origtt}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
-            {{result.departure}}
+            {{result.originiata}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
-            1h20m
+            {{result.flighttime}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
-            {{result.arrival}}
+            {{result.destiata}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
-            20m
+            {{result.desttt}}
           </div>
-          <div class="col-md-2">{{result.duration}}</div>
+          <div class="col-md-2">{{result.traveltime}}</div>
           <div class="col-md-2">{{result.price}}</div>
           <br/>
           <br/>

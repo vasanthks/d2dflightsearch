@@ -15,6 +15,7 @@ app.get('/hello', function (req, res) {
 app.get('/flightsearch', function (req, mainresponse) {
     var hold = true;
     var origin = req.query.origin
+    var destination = req.query.destination
 //    var destination = req.query.destination
     var originLatLong = req.query.olatlong.split(",")
     var destinationLatLong = req.query.dlatlong.split(",")
@@ -25,6 +26,7 @@ app.get('/flightsearch', function (req, mainresponse) {
     var destinationLat = destinationLatLong[0];
     var destinationLong = destinationLatLong[1];
 
+    var resbody = []
 
 //    var originairportcodes = airportRadiusSearch(originLat, originLong)
 //    var destinationairportcodes = airportRadiusSearch(destinationLat, destinationLong)
@@ -35,6 +37,7 @@ app.get('/flightsearch', function (req, mainresponse) {
     var origairportCodes = []
     var destairportCodes = []
     var origintraveltimes = {};
+    var destinationtraveltimes = {};
 
     var originCall = function (next) {
        airportRadiusSearch(next, originLat, originLong, origairportCodes)
@@ -56,7 +59,7 @@ app.get('/flightsearch', function (req, mainresponse) {
       destairportCodes = stripBadAirports(destairportCodes)
       next()
     }
-    var traveltimecall = function(next) {
+    var origintraveltimecall = function(next) {
       console.log("after")
       console.log(origairportCodes);
       console.log(destairportCodes);
@@ -68,7 +71,44 @@ app.get('/flightsearch', function (req, mainresponse) {
             if(ctr==origairportCodes.length) {
               next()
             }
-          });
+          },'origin');
+      }
+    }
+
+    var destinationtraveltimecall = function(next) {
+      console.log("after")
+      console.log(origairportCodes);
+      console.log(destairportCodes);
+      var ctr=0;
+      for (i=0; i<destairportCodes.length; i++) {
+          traveltimegen(destairportCodes[i], destination, function(duration, internaldestination) {
+            ctr++;
+            destinationtraveltimes[internaldestination] = duration;
+            if(ctr==destairportCodes.length) {
+              next()
+            }
+          },'destination');
+      }
+    }
+
+    var flightsearchcall = function(next) {
+      var ctr=0;
+      for (i=0; i<origairportCodes.length; i++) {
+        for (j = 0 ; j<destairportCodes.length; j++) {
+          flightsearch(next, origairportCodes[i], destairportCodes[i], "2016-01-22", function(minlegairline, minlegprice, traveltime, originiata, destiata) {
+            var obj = {}
+            obj['price'] = minlegprice;
+            obj['flighttime'] = parseInt((traveltime/60)/60) + 'hrs'
+            obj['traveltime'] = ((traveltime/60) + parseInt(origintraveltimes[originiata]) + parseInt(destinationtraveltimes[destiata]))/60 + 'hrs'
+            obj['originiata'] = originiata
+            obj['destiata'] = destiata
+            obj['origtt'] = origintraveltimes[originiata]
+            obj['desttt'] = destinationtraveltimes[destiata]
+            obj['airline'] = minlegairline
+
+            resbody.push(obj)
+          })
+        }
       }
     }
 
@@ -77,12 +117,15 @@ app.get('/flightsearch', function (req, mainresponse) {
         .then(destinationCall)
         .then(stripBadAirportsOriginCall)
         .then(stripBadAirportsDestinationCall)
-        .then(traveltimecall)
+        .then(origintraveltimecall)
+        .then(destinationtraveltimecall)
+        .then(flightsearchcall)
         .then(function (next) {
             setTimeout(function () {
                 console.log("Hello", "World");
                 console.log(origintraveltimes);
-                mainresponse.send(origintraveltimes);
+                console.log(destinationtraveltimes);
+                mainresponse.send(resbody);
                 next();
             }, 50);
         });
@@ -109,16 +152,19 @@ var server = app.listen(3000, function () {
 });
 
 
-function traveltimegen(origin, destination, callback) {
-  console.log('https://maps.googleapis.com/maps/api/directions/json?'+'key=AIzaSyCCvw_1ASiIIZ0jZDjvG9rnh1FecDojlwI'+
+function traveltimegen(origin, destination, callback, type) {
+  var requrl = 'https://maps.googleapis.com/maps/api/directions/json?'+'key=AIzaSyCCvw_1ASiIIZ0jZDjvG9rnh1FecDojlwI'+
       '&origin=\"' + origin+ '\"'+
       '&destination=\"' + destination + ' ' + 'airport' + '\"' +
-      '&mode=driving')
+      '&mode=driving';
+      if(type=='destination') {
+        requrl = 'https://maps.googleapis.com/maps/api/directions/json?'+'key=AIzaSyCCvw_1ASiIIZ0jZDjvG9rnh1FecDojlwI'+
+            '&origin=\"' + origin+ ' ' + 'airport' + '\"'+
+            '&destination=\"' + destination + '\"' +
+            '&mode=driving';
+      }
   request({
-      url: 'https://maps.googleapis.com/maps/api/directions/json?'+'key=AIzaSyCCvw_1ASiIIZ0jZDjvG9rnh1FecDojlwI'+
-          '&origin=\"' + origin+ '\"'+
-          '&destination=\"' + destination + ' ' + 'airport' + '\"' +
-          '&mode=driving',
+      url: requrl,
       method: 'GET'
 
 
@@ -132,11 +178,14 @@ function traveltimegen(origin, destination, callback) {
               var distance = directions.routes[0].legs[0].distance.text
               var duration = directions.routes[0].legs[0].duration.text
 
-
-
               console.log(duration)
               console.log(distance)
-              callback(duration,destination)
+              if(type=='destination') {
+                callback(duration,origin);
+              } else {
+                callback(duration,destination)
+              }
+
               //res.send(body.aggregations['top-origin']['buckets'][0]['min_price_hits']['hits']['hits'][0]['_source'])
           }
           catch(err) {
@@ -158,7 +207,7 @@ function airportRadiusSearch(next, latitude, longitude, airportCodes) {
 
     },function(error, response, body){
         if(error) {
-            res.send({price: 150})
+            res.send(error)
         } else {
             try {
                 var airports = JSON.parse(body)
@@ -180,8 +229,47 @@ function airportRadiusSearch(next, latitude, longitude, airportCodes) {
 
     });
 
+}
 
+function flightsearch(next, originiata, destiata, departdate, callback) {
+  request({
+      url: 'http://terminal2.expedia.com/x/mflights/search?maxOfferCount=20'+
+      '&departureAirport='+originiata+'&arrivalAirport='+destiata+'&departureDate='+departdate+'&apikey=egVouBielIiUN7qQlgAxaZDEuYGfOrZ9',
 
+      method: 'GET'
+  },function(error, response, body){
+      if(error) {
+          res.send({price: 150})
+      } else {
+          try {
+              var resp = JSON.parse(body)
+              var legs = resp.legs
+              var minlegindex = 0;
+              var minlegairline = legs[0]['segments'][0]['airlineName']
+              segsize = legs[0]['segments'].length;
+              var min =  legs[0]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[0]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds']
+                          - (legs[0]['segments'][0]['departureTimeEpochSeconds'] +legs[0]['segments'][0]['departureTimeZoneOffsetSeconds']);
+              for (var j = 0; j < legs.length; j++) {
+                segsize = legs[j]['segments'].length;
+                traveltime = legs[j]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[j]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds']
+                            - (legs[j]['segments'][0]['departureTimeEpochSeconds'] +legs[j]['segments'][0]['departureTimeZoneOffsetSeconds']);
+                if(traveltime< min){
+                  minlegindex = j;
+                  minlegairline = legs[j]['segments'][0]['airlineName']
+                }
+              }
+              minlegprice = resp.offers[minlegindex]['totalFare']
+              callback(minlegairline, minlegprice, traveltime, originiata, destiata);
+          }
+          catch(err) {
+              console.log(err)
+          }
+      }
+      console.log('return')
+
+      next()
+
+  });
 }
 
 
