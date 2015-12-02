@@ -16,6 +16,7 @@ app.get('/flightsearch', function (req, mainresponse) {
     var hold = true;
     var origin = req.query.origin
     var destination = req.query.destination
+    var departdate = req.query.departdate
 //    var destination = req.query.destination
     var originLatLong = req.query.olatlong.split(",")
     var destinationLatLong = req.query.dlatlong.split(",")
@@ -95,11 +96,14 @@ app.get('/flightsearch', function (req, mainresponse) {
       var ctr=0;
       for (i=0; i<origairportCodes.length; i++) {
         for (j = 0 ; j<destairportCodes.length; j++) {
-          flightsearch(next, origairportCodes[i], destairportCodes[i], "2016-01-22", function(minlegairline, minlegprice, traveltime, originiata, destiata) {
+          flightsearch(next, origairportCodes[i], destairportCodes[j], "2016-01-22", function(minlegairline, minlegprice, traveltime, originiata, destiata) {
+            ctr ++;
+            //console.log(ctr);
             var obj = {}
             obj['price'] = minlegprice;
-            obj['flighttime'] = parseInt((traveltime/60)/60) + 'hrs'
-            obj['traveltime'] = ((traveltime/60) + parseInt(origintraveltimes[originiata]) + parseInt(destinationtraveltimes[destiata]))/60 + 'hrs'
+            obj['flighttime'] = Math.round( (traveltime/3600) * 10 ) / 10 + 'hrs'
+            var tt = (traveltime/60) + parseInt(origintraveltimes[originiata]) + parseInt(destinationtraveltimes[destiata])
+            obj['traveltime'] = Math.round((tt/60) * 10) / 10 + 'hrs'
             obj['originiata'] = originiata
             obj['destiata'] = destiata
             obj['origtt'] = origintraveltimes[originiata]
@@ -107,6 +111,9 @@ app.get('/flightsearch', function (req, mainresponse) {
             obj['airline'] = minlegairline
 
             resbody.push(obj)
+            if(ctr == origairportCodes.length*destairportCodes.length) {
+              next()
+            }
           })
         }
       }
@@ -125,6 +132,7 @@ app.get('/flightsearch', function (req, mainresponse) {
                 console.log("Hello", "World");
                 console.log(origintraveltimes);
                 console.log(destinationtraveltimes);
+                resbody.sort(compare);
                 mainresponse.send(resbody);
                 next();
             }, 50);
@@ -232,6 +240,9 @@ function airportRadiusSearch(next, latitude, longitude, airportCodes) {
 }
 
 function flightsearch(next, originiata, destiata, departdate, callback) {
+  console.log(originiata + ' ' + destiata);
+  console.log('http://terminal2.expedia.com/x/mflights/search?maxOfferCount=20'+
+  '&departureAirport='+originiata+'&arrivalAirport='+destiata+'&departureDate='+departdate+'&apikey=egVouBielIiUN7qQlgAxaZDEuYGfOrZ9');
   request({
       url: 'http://terminal2.expedia.com/x/mflights/search?maxOfferCount=20'+
       '&departureAirport='+originiata+'&arrivalAirport='+destiata+'&departureDate='+departdate+'&apikey=egVouBielIiUN7qQlgAxaZDEuYGfOrZ9',
@@ -247,13 +258,16 @@ function flightsearch(next, originiata, destiata, departdate, callback) {
               var minlegindex = 0;
               var minlegairline = legs[0]['segments'][0]['airlineName']
               segsize = legs[0]['segments'].length;
-              var min =  legs[0]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[0]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds']
+              var min =  (legs[0]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[0]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds'])
                           - (legs[0]['segments'][0]['departureTimeEpochSeconds'] +legs[0]['segments'][0]['departureTimeZoneOffsetSeconds']);
+
+              var traveltime = null;
               for (var j = 0; j < legs.length; j++) {
                 segsize = legs[j]['segments'].length;
-                traveltime = legs[j]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[j]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds']
+                traveltime = (legs[j]['segments'][segsize-1]['arrivalTimeEpochSeconds'] + legs[j]['segments'][segsize-1]['arrivalTimeZoneOffsetSeconds'])
                             - (legs[j]['segments'][0]['departureTimeEpochSeconds'] +legs[j]['segments'][0]['departureTimeZoneOffsetSeconds']);
                 if(traveltime< min){
+                  console.log("traveltimemin = " +  traveltime/3600);
                   minlegindex = j;
                   minlegairline = legs[j]['segments'][0]['airlineName']
                 }
@@ -267,12 +281,18 @@ function flightsearch(next, originiata, destiata, departdate, callback) {
       }
       console.log('return')
 
-      next()
-
   });
 }
 
-
+function compare(a,b) {
+  x = parseFloat(a.traveltime);
+  y = parseFloat(b.traveltime);
+  if (x < y)
+    return -1;
+  if (x > y)
+    return 1;
+  return 0;
+}
 
 function stripBadAirports(airportCodes) {
     var validatedairports = []
