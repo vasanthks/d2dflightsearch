@@ -42,7 +42,7 @@
           <br/>
           <div class="row">
             <button class="btn btn-default" ng-click="searchnow()">
-              Search
+              {{search}}
             </button>
           </div>
         </div>
@@ -51,7 +51,7 @@
     </div>
   </div>
   <div id="bottom" class="container-fluid">
-    <div class="row outerbox">
+    <div ng-show="searchresults" class="row outerbox">
       <div class="col-md-12">
         <h3 class="col-md-2">Airline</h3>
         <h3 class="col-md-6">Journey</h3>
@@ -64,6 +64,7 @@
           <br/>
           <div class="col-md-2">{{result.airline}}</div>
           <div class="col-md-6">
+            <span class="glyphicon glyphicon glyphicon-road" aria-hidden="true"></span>
             {{result.origtt}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
             {{result.originiata}}
@@ -73,6 +74,7 @@
             {{result.destiata}}
             <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
             {{result.desttt}}
+            <span class="glyphicon glyphicon glyphicon-road" aria-hidden="true"></span>
           </div>
           <div class="col-md-2">{{result.traveltime}}</div>
           <div class="col-md-2">{{result.price}}</div>

@@ -4,6 +4,7 @@ var app = angular.module('example', ['google.places']);
 app.controller('MainCtrl', function ($filter, $http, $scope, $location, anchorSmoothScroll) {
   $scope.origin = null;
   $scope.destination = null;
+  $scope.search = 'Search';
   $scope.departdate = {
          value: new Date(2015, 12, 2)
        };
@@ -11,6 +12,7 @@ app.controller('MainCtrl', function ($filter, $http, $scope, $location, anchorSm
   $scope.searchresults = null;
 
   $scope.searchnow = function() {
+    $scope.search = 'Searching..'
     $location.hash('bottom');
     var origin = $scope.origin
     var destination = $scope.destination
@@ -36,6 +38,7 @@ app.controller('MainCtrl', function ($filter, $http, $scope, $location, anchorSm
       url: queryurl
     }).then(function successCallback(response) {
         $scope.searchresults = response.data
+        $scope.search = 'Search';
         anchorSmoothScroll.scrollTo('bottom');
       }, function errorCallback(response) {
         // called asynchronously if an error occurs
